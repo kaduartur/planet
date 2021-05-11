@@ -8,7 +8,10 @@ import (
 	"net/url"
 )
 
-var ErrPlanetNotFound = errors.New("the planet was not found")
+var (
+	ErrPlanetNotFound = errors.New("the planet was not found")
+	ErrFilmNotFound = errors.New("the film was not found")
+)
 
 type Manager struct {
 	url    string
@@ -40,7 +43,7 @@ func (s Manager) FindPlanetByName(name string) (Planet, error) {
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return Planet{}, err
+		return Planet{}, fmt.Errorf("an unexpected error has occurred. STATUS=%s", res.Status)
 	}
 
 	defer res.Body.Close()
@@ -70,11 +73,11 @@ func (s Manager) FindFilmById(id string) (Film, error) {
 	}
 
 	if res.StatusCode == http.StatusNotFound {
-		return Film{}, ErrPlanetNotFound
+		return Film{}, ErrFilmNotFound
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return Film{}, err
+		return Film{}, fmt.Errorf("an unexpected error has occurred. STATUS=%s", res.Status)
 	}
 
 	defer res.Body.Close()

@@ -1,8 +1,9 @@
 package swapi
 
 import (
+	"errors"
+	"github.com/stretchr/testify/assert"
 	"net/http"
-	"reflect"
 	"testing"
 )
 
@@ -13,7 +14,7 @@ func TestFindPlanetByName(t *testing.T) {
 
 	type out struct {
 		err  error
-		want []Planet
+		want Planet
 	}
 
 	cases := []struct {
@@ -27,16 +28,11 @@ func TestFindPlanetByName(t *testing.T) {
 				planetName: "tatooine",
 			},
 			out: out{
-				want: []Planet{
-					{
-						Name: "Tatooine",
-						Films: []string{
-							"http://swapi.dev/api/films/1/",
-							"http://swapi.dev/api/films/3/",
-							"http://swapi.dev/api/films/4/",
-							"http://swapi.dev/api/films/5/",
-							"http://swapi.dev/api/films/6/"},
-					},
+				want: Planet{
+					Name:    "Tatooine",
+					Climate: "arid",
+					Terrain: "desert",
+					Films:   []string{"http://swapi.dev/api/films/1/"},
 				},
 			},
 		},
@@ -49,6 +45,15 @@ func TestFindPlanetByName(t *testing.T) {
 				err: ErrPlanetNotFound,
 			},
 		},
+		{
+			name: "server error",
+			in: in{
+				planetName: "server_error",
+			},
+			out: out{
+				err: errors.New("an unexpected error has occurred. STATUS=500 Server Error"),
+			},
+		},
 	}
 
 	for _, c := range cases {
@@ -56,13 +61,66 @@ func TestFindPlanetByName(t *testing.T) {
 			swapi := NewClient("http://127.0.0.1:8882", http.DefaultClient)
 			got, err := swapi.FindPlanetByName(c.in.planetName)
 
-			if err != c.out.err {
-				t.Errorf("FindPlanetByName(%q) == %q, want %q", c.name, err, c.out.err)
-			}
+			assert.Equal(t, err, c.out.err)
+			assert.Equal(t, got, c.out.want)
+		})
+	}
+}
 
-			if !reflect.DeepEqual(got, c.out.want) {
-				t.Errorf("FindPlanetByName(%q) == %q, want %q", c.name, got, c.out.want)
-			}
+func TestFindFilmById(t *testing.T) {
+	type in struct {
+		id string
+	}
+
+	type out struct {
+		err  error
+		want Film
+	}
+
+	cases := []struct {
+		name string
+		in   in
+		out  out
+	}{
+		{
+			name: "success",
+			in: in{
+				id: "1",
+			},
+			out: out{
+				want: Film{
+					Title:       "A New Hope",
+					ReleaseData: "1977-05-25",
+				},
+			},
+		},
+		{
+			name: "not found",
+			in: in{
+				id: "3",
+			},
+			out: out{
+				err: ErrFilmNotFound,
+			},
+		},
+		{
+			name: "server error",
+			in: in{
+				id: "5",
+			},
+			out: out{
+				err: errors.New("an unexpected error has occurred. STATUS=500 Server Error"),
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			swapi := NewClient("http://127.0.0.1:8882", http.DefaultClient)
+			got, err := swapi.FindFilmById(c.in.id)
+
+			assert.Equal(t, err, c.out.err)
+			assert.Equal(t, got, c.out.want)
 		})
 	}
 
