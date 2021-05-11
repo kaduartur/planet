@@ -4,11 +4,14 @@ The planets API was made to manage planets, here you can create, find, list, and
 
 <img width="45%" src="https://github.com/ashleymcnamara/gophers/blob/master/GOPHER_STAR_WARS.png"/>
 
-#### Applications descriptions
+#### Application architecture
 This project was divided into three applications:
-- command-API: Responsible only for writing to the database.
+- command-api: Responsible only for writing to the database.
 - processor: Responsible for processing the planets created async.
-- query-API: Responsible for reading the planets.
+- query-api: Responsible for reading the planets.
+
+![planet_architecture](https://user-images.githubusercontent.com/17505818/117897434-2ecf2580-b299-11eb-9b23-95e1bdce1aed.png)
+
 
 #### Requirements to run:
 * 🐳 Docker compose
