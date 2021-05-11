@@ -6,6 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"log"
 )
 
 var _ planet.Reader = PlanetRead{}
@@ -24,17 +25,8 @@ func (p PlanetRead) ReadByPlanetId(id planet.ID) (planet.PlanetDocument, error) 
 	one := p.collection.FindOne(mgm.Ctx(), bson.M{"planetID": id})
 	var pd planet.PlanetDocument
 	if err := one.Decode(&pd); err != nil && err != mongo.ErrNoDocuments {
-		return planet.PlanetDocument{}, err
-	}
-
-	return pd, nil
-}
-
-func (p PlanetRead) ReadByName(name string) (planet.PlanetDocument, error) {
-	one := p.collection.FindOne(mgm.Ctx(), bson.M{"name": name})
-	var pd planet.PlanetDocument
-	if err := one.Decode(&pd); err != nil && err != mongo.ErrNoDocuments {
-		return planet.PlanetDocument{}, err
+		log.Printf("Error to read by planet id [PlanetId - %s] - [Error: %s]\n", id, err)
+		return planet.PlanetDocument{}, planet.ErrUnknown
 	}
 
 	return pd, nil
@@ -50,14 +42,14 @@ func (p PlanetRead) ReadAll(f planet.PageFilterRequest) ([]planet.PlanetDocument
 		filter = bson.M{"name": f.Name}
 	}
 
-
 	opts := options.FindOptions{
 		Limit: &limit,
 		Skip:  &offset,
 	}
 
 	if err := p.collection.SimpleFind(&result, filter, &opts); err != nil {
-		return nil, err
+		log.Printf("Error to read all planets [Filter - %v] - [Error: %s]\n", f, err)
+		return nil, planet.ErrUnknown
 	}
 
 	return result, nil
@@ -66,7 +58,8 @@ func (p PlanetRead) ReadAll(f planet.PageFilterRequest) ([]planet.PlanetDocument
 func (p PlanetRead) Count() (int, error) {
 	total, err := p.collection.CountDocuments(mgm.Ctx(), bson.M{})
 	if err != nil {
-		return 0, err
+		log.Printf("Error to count planets [Error: %s]\n", err)
+		return 0, planet.ErrUnknown
 	}
 
 	return int(total), err

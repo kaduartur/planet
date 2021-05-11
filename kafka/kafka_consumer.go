@@ -58,8 +58,7 @@ func (c ConsumerManager) Read() {
 				continue
 			}
 
-			id := string(e.Value)
-			event.Process(planet.ID(id))
+			event.Process(e.Value)
 
 		case kafka.Error:
 			log.Printf("Error: %v: %v\n", e.Code(), e)

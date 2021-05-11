@@ -20,6 +20,10 @@ func NewDeleter(r planet.Reader) PlanetDelete {
 }
 
 func (p PlanetDelete) Delete(id planet.ID) error {
+	if id == "" {
+		return planet.ErrPlanetIDEmpty
+	}
+
 	pd, err := p.planet.ReadByPlanetId(id)
 	if err != nil {
 		return err

@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/kaduartur/planet"
 	"github.com/kaduartur/planet/planetutil"
@@ -20,7 +21,7 @@ func NewCreatePlanetHandler(repoW planet.Writer, repoR planet.Reader, producer p
 func (cp CreatePlanetHandler) Handle(c *gin.Context) {
 	var createPlanet planet.CreatePlanetCommand
 	if err := c.BindJSON(&createPlanet); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.AbortWithStatusJSON(http.StatusBadRequest, planet.ErrDecodeRequest)
 		return
 	}
 
@@ -32,7 +33,7 @@ func (cp CreatePlanetHandler) Handle(c *gin.Context) {
 
 	pd, err := cp.planetR.ReadByPlanetId(planetutil.GeneratePlanetID(createPlanet.Name))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.AbortWithStatusJSON(http.StatusBadRequest, err)
 		return
 	}
 
@@ -43,12 +44,22 @@ func (cp CreatePlanetHandler) Handle(c *gin.Context) {
 
 	pd, err = cp.planetW.Write(createPlanet)
 	if err != nil {
-		c.AbortWithStatus(http.StatusUnprocessableEntity)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, err)
 		return
 	}
 
-	if err := cp.kafka.Write("planet-processor", planet.CreatedEvent, []byte(pd.PlanetID)); err != nil {
-		c.AbortWithStatus(http.StatusUnprocessableEntity)
+	event := planet.CreatePlanetEvent{
+		PlanetID: pd.PlanetID,
+	}
+
+	data, err := json.Marshal(event)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, planet.ErrUnknown)
+		return
+	}
+
+	if err := cp.kafka.Write("planet-processor", planet.CreatedEvent, data); err != nil {
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, err)
 		return
 	}
 

@@ -31,8 +31,8 @@ func (p PlanetWrite) Write(cmd planet.CreatePlanetCommand) (planet.PlanetDocumen
 	}
 
 	if err := p.collection.Create(document); err != nil {
-		log.Println(err)
-		return planet.PlanetDocument{}, err
+		log.Printf("Error to write planet [Planet: %+v] - [Error: %s]\n", cmd, err)
+		return planet.PlanetDocument{}, planet.ErrUnknown
 	}
 
 	return *document, nil

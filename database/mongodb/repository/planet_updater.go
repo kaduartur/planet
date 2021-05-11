@@ -20,8 +20,8 @@ func NewUpdater() PlanetUpdate {
 
 func (p PlanetUpdate) Update(document planet.PlanetDocument) error {
 	if err := p.collection.Update(&document); err != nil {
-		log.Println(err)
-		return err
+		log.Printf("Error to update planet [PlanetId: %s] - [Error: %s]\n", document.PlanetID, err)
+		return planet.ErrUnknown
 	}
 
 	return nil

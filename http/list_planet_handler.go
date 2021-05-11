@@ -3,7 +3,6 @@ package http
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/kaduartur/planet"
-	"log"
 	"net/http"
 )
 
@@ -31,15 +30,13 @@ func (d ListPlanetHandler) Handle(c *gin.Context) {
 
 	pd, err := d.planet.ReadAll(pageReq)
 	if err != nil {
-		log.Printf("Error to read all planets [%v]\n", err)
-		c.AbortWithStatus(http.StatusUnprocessableEntity)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, err)
 		return
 	}
 
 	total, err := d.planet.Count()
 	if err != nil {
-		log.Println(err)
-		c.AbortWithStatus(http.StatusUnprocessableEntity)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, err)
 		return
 	}
 

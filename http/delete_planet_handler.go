@@ -19,9 +19,9 @@ func NewDeletePlanetHandler(planet planet.Deleter) DeletePlanetHandler {
 
 func (d DeletePlanetHandler) Handle(c *gin.Context) {
 	planetID := c.Param("planet_id")
-	log.Printf("Deleting planet [planetId=%s]", planetID)
+	log.Printf("Deleting planet [planetId=%s]\n", planetID)
 	if err := d.planet.Delete(planet.ID(planetID)); err != nil {
-		c.AbortWithStatus(http.StatusUnprocessableEntity)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, err)
 		return
 	}
 

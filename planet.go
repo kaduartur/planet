@@ -19,7 +19,7 @@ type KafkaRead interface {
 }
 
 type EventProcessor interface {
-	Process(id ID)
+	Process(data interface{}) error
 }
 
 type Writer interface {
@@ -32,7 +32,6 @@ type Deleter interface {
 
 type Reader interface {
 	ReadByPlanetId(id ID) (PlanetDocument, error)
-	ReadByName(string) (PlanetDocument, error)
 	ReadAll(filter PageFilterRequest) ([]PlanetDocument, error)
 	Count() (int, error)
 }
@@ -67,6 +66,11 @@ func (e EventType) String() string {
 }
 
 type EventsProcessor map[string]EventProcessor
+
+type CreatePlanetEvent struct {
+	PlanetID   ID  `json:"planet_id"`
+	RetryCount int `json:"retry_count"`
+}
 
 type CreatePlanetCommand struct {
 	Name    string `json:"name"`

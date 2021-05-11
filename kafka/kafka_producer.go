@@ -29,7 +29,13 @@ func (pm *ProducerManager) Write(topic string, eventType planet.EventType, msg [
 	}, deliveryChan)
 
 	if err != nil {
-		return err
+		log.Printf(
+			"Error to produce message [topic: %s] - [eventType: %s] - [error: %s]\n",
+			topic,
+			eventType.String(),
+			err,
+		)
+		return planet.ErrUnknown
 	}
 
 	e := <-deliveryChan

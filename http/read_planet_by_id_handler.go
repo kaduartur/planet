@@ -22,7 +22,7 @@ func (d FindPlanetByIdHandler) Handle(c *gin.Context) {
 	log.Printf("Deleting planet [planetId=%s]", planetID)
 	pd, err := d.planet.ReadByPlanetId(planet.ID(planetID))
 	if err != nil {
-		c.AbortWithStatus(http.StatusUnprocessableEntity)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, err)
 		return
 	}
 

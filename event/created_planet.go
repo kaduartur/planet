@@ -1,6 +1,7 @@
 package event
 
 import (
+	"encoding/json"
 	"github.com/kaduartur/planet"
 	"github.com/kaduartur/planet/swapi"
 	"log"
@@ -12,35 +13,45 @@ import (
 const layoutISO = "2006-01-02"
 
 type CreatedPlanet struct {
-	planet planet.ReadUpdater
-	api    swapi.Finder
+	planet          planet.ReadUpdater
+	api             swapi.Finder
+	kafka           planet.KafkaWriter
+	maxRetryProcess int
 }
 
-func NewCreatePlanetProcess(planet planet.ReadUpdater, api swapi.Finder) CreatedPlanet {
+func NewCreatePlanetProcess(
+	planet planet.ReadUpdater,
+	api swapi.Finder,
+	kafka planet.KafkaWriter,
+	retryProcess int,
+) CreatedPlanet {
 	return CreatedPlanet{
-		planet: planet,
-		api:    api,
+		planet:          planet,
+		api:             api,
+		kafka:           kafka,
+		maxRetryProcess: retryProcess,
 	}
 }
 
-func (c CreatedPlanet) Process(id planet.ID) {
-	pd, err := c.planet.ReadByPlanetId(id)
+func (c CreatedPlanet) Process(data interface{}) error {
+	var event planet.CreatePlanetEvent
+	_ = json.Unmarshal(data.([]byte), &event)
+
+	pd, err := c.planet.ReadByPlanetId(event.PlanetID)
 	if err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 
 	if pd.Status == planet.Processed.String() {
 		log.Printf("The planet %q has already been processed [PlanetID: %s]\n", pd.Name, pd.PlanetID)
-		return
+		return planet.ErrPlanetAlreadyProcessed
 	}
 
-	pd.Status = planet.Processed.String()
 	planetRes, err := c.api.FindPlanetByName(pd.Name)
 	if err != nil {
-		log.Println(err)
-		c.update(pd)
-		return
+		log.Printf("error to find planet into swapi [planetId: %s] - [error: %s]", pd.PlanetID, err)
+		c.retry(pd, event)
+		return err
 	}
 
 	var films planet.Films
@@ -49,13 +60,14 @@ func (c CreatedPlanet) Process(id planet.ID) {
 		film, err := c.api.FindFilmById(filmId)
 		if err != nil {
 			log.Println(err)
-			continue
+			c.retry(pd, event)
+			return err
 		}
 
 		release, err := time.Parse(layoutISO, film.ReleaseData)
 		if err != nil {
 			log.Println(err)
-			continue
+			return err
 		}
 
 		f := planet.Film{
@@ -69,12 +81,43 @@ func (c CreatedPlanet) Process(id planet.ID) {
 	pd.Films = films
 	pd.Climate = strings.Split(planetRes.Climate, ", ")
 	pd.Terrain = strings.Split(planetRes.Terrain, ", ")
+	pd.Status = planet.Processed.String()
 
-	c.update(pd)
+	if err := c.update(pd); err != nil {
+		c.retry(pd, event)
+		return err
+	}
+
+	return nil
 }
 
-func (c CreatedPlanet) update(pd planet.PlanetDocument)  {
+func (c CreatedPlanet) update(pd planet.PlanetDocument) error {
 	if err := c.planet.Update(pd); err != nil {
-		log.Println(err)
+		log.Printf("Error to update planet [planet: %+v] - [error: %s]\n", pd, err)
+		return err
+	}
+
+	return nil
+}
+
+func (c CreatedPlanet) retry(pd planet.PlanetDocument, event planet.CreatePlanetEvent) {
+	if event.RetryCount >= c.maxRetryProcess {
+		log.Printf("all retries have already been carried out\n")
+
+		pd.Status = planet.Failed.String()
+		_ = c.update(pd)
+		return
+	}
+
+	event.RetryCount++
+	data, err := json.Marshal(event)
+	if err != nil {
+		log.Printf("error to retry event [event: %+v]\n", event)
+		return
+	}
+
+	if err := c.kafka.Write("planet-processor", planet.CreatedEvent, data); err != nil {
+		log.Printf("error to write message into kafka")
+		return
 	}
 }
