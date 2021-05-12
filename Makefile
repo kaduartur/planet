@@ -18,5 +18,4 @@ run-processor:
 
 run-test:
 	mkdir -p $(BIN)
-	$(GO_TEST) -short -coverprofile=$(BIN)/cov.out `go list ./... | grep -v vendor/`
-	$(GO_TOOL_COVER) -func=$(BIN)/cov.out
+	$(GO_TEST) -race -coverprofile=coverage.txt -covermode=atomic `go list ./... | grep -v vendor/`
