@@ -3,12 +3,15 @@ package swapi
 import (
 	"errors"
 	"github.com/stretchr/testify/assert"
+	"io"
 	"net/http"
+	"net/url"
 	"testing"
 )
 
 func TestFindPlanetByName(t *testing.T) {
 	type in struct {
+		url        string
 		planetName string
 	}
 
@@ -25,6 +28,7 @@ func TestFindPlanetByName(t *testing.T) {
 		{
 			name: "success",
 			in: in{
+				url:        "http://127.0.0.1:8882",
 				planetName: "tatooine",
 			},
 			out: out{
@@ -39,6 +43,7 @@ func TestFindPlanetByName(t *testing.T) {
 		{
 			name: "not found",
 			in: in{
+				url:        "http://127.0.0.1:8882",
 				planetName: "not found planet",
 			},
 			out: out{
@@ -46,23 +51,58 @@ func TestFindPlanetByName(t *testing.T) {
 			},
 		},
 		{
+			name: "empty result",
+			in: in{
+				url:        "http://127.0.0.1:8882",
+				planetName: "empty_result",
+			},
+			out: out{
+				err: ErrPlanetNotFound,
+			},
+		},
+		{
+			name: "invalid json response",
+			in: in{
+				url:        "http://127.0.0.1:8882",
+				planetName: "invalid_json",
+			},
+			out: out{
+				err: io.EOF,
+			},
+		},
+		{
 			name: "server error",
 			in: in{
+				url:        "http://127.0.0.1:8882",
 				planetName: "server_error",
 			},
 			out: out{
 				err: errors.New("an unexpected error has occurred. STATUS=500 Server Error"),
 			},
 		},
+		{
+			name: "invalid url",
+			in: in{
+				url:        "invalid",
+				planetName: "tatooine",
+			},
+			out: out{
+				err: &url.Error{
+					Op:  "Get",
+					URL: "invalid/api/planets?search=tatooine",
+					Err: errors.New("unsupported protocol scheme \"\""),
+				},
+			},
+		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			swapi := NewClient("http://127.0.0.1:8882", http.DefaultClient)
+			swapi := NewClient(c.in.url, http.DefaultClient)
 			got, err := swapi.FindPlanetByName(c.in.planetName)
 
-			assert.Equal(t, err, c.out.err)
-			assert.Equal(t, got, c.out.want)
+			assert.Equal(t, c.out.err, err)
+			assert.Equal(t,  c.out.want, got)
 		})
 	}
 }

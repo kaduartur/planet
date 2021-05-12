@@ -47,6 +47,37 @@
           ]
       }
 
+
+- request:
+    method: GET
+    url: /api/planets
+    query:
+      search: empty_result
+
+  response:
+    status: 200
+    headers:
+      content-type: application/json
+    body: >
+      {
+          "count": 0,
+          "next": null,
+          "previous": null,
+          "results": []
+      }
+
+# Invalid json response
+- request:
+    method: GET
+    url: /api/planets
+    query:
+      search: invalid_json
+
+  response:
+    status: 200
+    body: ""
+
+
 # Not found planet
 - request:
     method: GET
