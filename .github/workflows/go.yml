@@ -15,7 +15,6 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.15
-        token: ${{ secrets.CODECOV_TOKEN }}
     
     - name: Check out code
       uses: actions/checkout@v2
@@ -30,4 +29,4 @@ jobs:
       run: make run-test
 
     - name: Upload coverage to Codecov
-      run: bash <(curl -s https://codecov.io/bash)
+      run: bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }}
