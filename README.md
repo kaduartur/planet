@@ -1,3 +1,8 @@
+[![Test](https://github.com/kaduartur/planet/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/kaduartur/planet/actions/workflows/go.yml)
+[![codecov](https://codecov.io/gh/kaduartur/planet/branch/main/graph/badge.svg?token=XJU7N08559)](https://codecov.io/gh/kaduartur/planet)
+[![CodeFactor](https://www.codefactor.io/repository/github/kaduartur/planet/badge?s=c776547d6f360ee54ba5ccf8fda1580978c2648d)](https://www.codefactor.io/repository/github/kaduartur/planet)
+
+
 # 🌎 The planets api 🪐
 
 The planets API was made to manage planets, here you can create, find, list, and delete planets.
