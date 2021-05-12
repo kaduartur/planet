@@ -23,7 +23,7 @@ jobs:
       run: go build -v ./...
       
     - name: Run docker
-      run: docker-compose up
+      run: docker-compose up -d
 
     - name: Test
       run: make run-test
