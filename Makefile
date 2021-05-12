@@ -17,5 +17,4 @@ run-processor:
 	${ENVS} $(GO_RUN) ./cmd/processor/main.go
 
 run-test:
-	mkdir -p $(BIN)
-	$(GO_TEST) -race -coverprofile=coverage.txt -covermode=atomic `go list ./... | grep -v vendor/`
+	${ENVS} $(GO_TEST) -race -coverprofile=coverage.txt -covermode=atomic `go list ./... | grep -v vendor/`
