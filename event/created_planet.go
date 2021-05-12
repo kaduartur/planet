@@ -3,6 +3,7 @@ package event
 import (
 	"encoding/json"
 	"github.com/kaduartur/planet"
+	"github.com/kaduartur/planet/slice/sliceutil"
 	"github.com/kaduartur/planet/swapi"
 	"log"
 	"path"
@@ -50,14 +51,19 @@ func (c CreatedPlanet) Process(data interface{}) error {
 		return planet.ErrPlanetAlreadyProcessed
 	}
 
+	pd.Status = planet.Processed.String()
 	planetRes, err := c.api.FindPlanetByName(pd.Name)
 	if err != nil {
 		log.Printf("error to find planet into swapi [planetId: %s] - [error: %s]", pd.PlanetID, err)
+		if err == swapi.ErrPlanetNotFound {
+			return c.update(pd)
+		}
+
 		c.retry(pd, event)
 		return err
 	}
 
-	var films planet.Films
+	films := make(planet.Films, 0)
 	for _, url := range planetRes.Films {
 		filmId := path.Base(url)
 		film, err := c.api.FindFilmById(filmId)
@@ -82,9 +88,8 @@ func (c CreatedPlanet) Process(data interface{}) error {
 	}
 
 	pd.Films = films
-	pd.Climate = strings.Split(planetRes.Climate, ", ")
-	pd.Terrain = strings.Split(planetRes.Terrain, ", ")
-	pd.Status = planet.Processed.String()
+	pd.Climate = sliceutil.Merge(pd.Climate, strings.Split(planetRes.Climate, ", ")...)
+	pd.Terrain = sliceutil.Merge(pd.Terrain, strings.Split(planetRes.Terrain, ", ")...)
 
 	if err := c.update(pd); err != nil {
 		c.retry(pd, event)

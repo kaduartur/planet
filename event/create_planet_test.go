@@ -2,6 +2,7 @@ package event
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/kaduartur/planet"
 	"github.com/kaduartur/planet/internal/mock"
 	"github.com/kaduartur/planet/swapi"
@@ -83,7 +84,7 @@ func TestProcess(t *testing.T) {
 			want: planet.ErrPlanetAlreadyProcessed,
 		},
 		{
-			name: "error to request planet to swapi",
+			name: "update planet with status processed when planet not found",
 			in: in{
 				event: planet.CreatePlanetEvent{
 					PlanetID:   "PmGs6HhdFVyz01FZgKHoiz_SKxz6B23UH2HZwu5L7BY=",
@@ -101,7 +102,27 @@ func TestProcess(t *testing.T) {
 				producer: mock.KafkaWrite{},
 				retry:    1,
 			},
-			want: swapi.ErrPlanetNotFound,
+		},
+		{
+			name: "update planet with status processed when planet not found",
+			in: in{
+				event: planet.CreatePlanetEvent{
+					PlanetID:   "PmGs6HhdFVyz01FZgKHoiz_SKxz6B23UH2HZwu5L7BY=",
+					RetryCount: 0,
+				},
+				repo: mock.PlanetRepository{
+					DocReadById: planet.PlanetDocument{
+						PlanetID: "PmGs6HhdFVyz01FZgKHoiz_SKxz6B23UH2HZwu5L7BY=",
+						Status:   planet.Processing.String(),
+					},
+				},
+				swapi: mock.Swapi{
+					PlanetErr: errors.New("error to find planet"),
+				},
+				producer: mock.KafkaWrite{},
+				retry:    1,
+			},
+			want: errors.New("error to find planet"),
 		},
 		{
 			name: "error to update planet",
@@ -136,13 +157,36 @@ func TestProcess(t *testing.T) {
 						Status:   planet.Processing.String(),
 					},
 				},
-				swapi:    mock.Swapi{
-					PlanetErr: swapi.ErrPlanetNotFound,
+				swapi: mock.Swapi{
+					PlanetErr: errors.New("error to find planet"),
 				},
 				producer: mock.KafkaWrite{},
 				retry:    1,
 			},
-			want: swapi.ErrPlanetNotFound,
+			want: errors.New("error to find planet"),
+		},
+		{
+			name: "kafka producer error",
+			in: in{
+				event: planet.CreatePlanetEvent{
+					PlanetID:   "PmGs6HhdFVyz01FZgKHoiz_SKxz6B23UH2HZwu5L7BY=",
+					RetryCount: 0,
+				},
+				repo: mock.PlanetRepository{
+					DocReadById: planet.PlanetDocument{
+						PlanetID: "PmGs6HhdFVyz01FZgKHoiz_SKxz6B23UH2HZwu5L7BY=",
+						Status:   planet.Processing.String(),
+					},
+				},
+				swapi: mock.Swapi{
+					PlanetErr: errors.New("error to find planet"),
+				},
+				producer: mock.KafkaWrite{
+					Err: errors.New("error to write in kafka"),
+				},
+				retry:    1,
+			},
+			want: errors.New("error to find planet"),
 		},
 	}
 
