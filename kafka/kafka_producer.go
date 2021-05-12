@@ -4,6 +4,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/kaduartur/planet"
 	"log"
+	"os"
 )
 
 type ProducerManager struct {
@@ -11,7 +12,7 @@ type ProducerManager struct {
 }
 
 func NewProducer() *ProducerManager {
-	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": "localhost"})
+	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": os.Getenv("KAFKA_SERVER")})
 	if err != nil {
 		log.Fatalf("Failed to create producer: %s\n", err)
 	}

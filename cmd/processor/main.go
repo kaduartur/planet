@@ -13,21 +13,23 @@ import (
 )
 
 func main() {
+	swapiURL := os.Getenv("SWAPI_URL")
+	topic := os.Getenv("KAFKA_PLANET_TOPIC")
+
 	mongodb.NewConnection()
 	reader := repository.NewReader()
 	updater := repository.NewUpdater()
 	readUpdater := repository.NewReadUpdater(reader, updater)
 
 	httpClient := &http.Client{Timeout: time.Second * 5}
-	swapiClient := swapi.NewClient(os.Getenv("SWAPI_URL"), httpClient)
-	producer := kafka.NewProducer()
+	swapiClient := swapi.NewClient(swapiURL, httpClient)
 
-	createPlanetProcessor := event.NewCreatePlanetProcess(readUpdater, swapiClient, producer, 5)
+	producer := kafka.NewProducer()
+	createPlanetProcessor := event.NewCreatePlanetProcess(readUpdater, swapiClient, producer, topic, 5)
 	eventsProcessor := planet.EventsProcessor{
 		planet.CreatedEvent.String(): createPlanetProcessor,
 	}
 
 	consumer := kafka.NewConsumer(eventsProcessor)
 	consumer.Read()
-
 }

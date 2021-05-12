@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
@@ -177,7 +178,7 @@ func setupCreatePlanetHandle(
 	kafkaWriter planet.KafkaWriter,
 ) *gin.Engine {
 	r := gin.Default()
-	createPlanet := NewCreatePlanetHandler(writer, reader, kafkaWriter)
+	createPlanet := NewCreatePlanetHandler(writer, reader, kafkaWriter, os.Getenv("KAFKA_TOPIC"))
 
 	v1 := r.Group("/v1")
 	{

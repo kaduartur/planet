@@ -9,13 +9,24 @@ import (
 )
 
 type CreatePlanetHandler struct {
-	planetW planet.Writer
-	planetR planet.Reader
-	kafka   planet.KafkaWriter
+	planetW    planet.Writer
+	planetR    planet.Reader
+	kafka      planet.KafkaWriter
+	kafkaTopic string
 }
 
-func NewCreatePlanetHandler(repoW planet.Writer, repoR planet.Reader, producer planet.KafkaWriter) CreatePlanetHandler {
-	return CreatePlanetHandler{planetW: repoW, planetR: repoR, kafka: producer}
+func NewCreatePlanetHandler(
+	repoW planet.Writer,
+	repoR planet.Reader,
+	producer planet.KafkaWriter,
+	kafkaTopic string,
+) CreatePlanetHandler {
+	return CreatePlanetHandler{
+		planetW:    repoW,
+		planetR:    repoR,
+		kafka:      producer,
+		kafkaTopic: kafkaTopic,
+	}
 }
 
 func (cp CreatePlanetHandler) Handle(c *gin.Context) {
@@ -58,7 +69,7 @@ func (cp CreatePlanetHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	if err := cp.kafka.Write("planet-processor", planet.CreatedEvent, data); err != nil {
+	if err := cp.kafka.Write(cp.kafkaTopic, planet.CreatedEvent, data); err != nil {
 		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, err)
 		return
 	}

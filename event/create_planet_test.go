@@ -6,6 +6,7 @@ import (
 	"github.com/kaduartur/planet/internal/mock"
 	"github.com/kaduartur/planet/swapi"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
@@ -147,7 +148,7 @@ func TestProcess(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			process := NewCreatePlanetProcess(c.in.repo, c.in.swapi, c.in.producer, c.in.retry)
+			process := NewCreatePlanetProcess(c.in.repo, c.in.swapi, c.in.producer, os.Getenv("KAFKA_TOPIC"), c.in.retry)
 
 			b, _ := json.Marshal(c.in.event)
 

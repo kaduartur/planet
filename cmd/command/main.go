@@ -11,16 +11,17 @@ import (
 
 func main() {
 	mongodb.NewConnection()
-	kafkaProducer := kafka.NewProducer()
-
 	planetRead := repository.NewReader()
 	planetWrite := repository.NewWriter()
 	planetDelete := repository.NewDeleter(planetRead)
 
-	r := gin.Default()
-	createPlanet := http.NewCreatePlanetHandler(planetWrite, planetRead, kafkaProducer)
+	kafkaProducer := kafka.NewProducer()
+
+	topic := os.Getenv("KAFKA_PLANET_TOPIC")
+	createPlanet := http.NewCreatePlanetHandler(planetWrite, planetRead, kafkaProducer, topic)
 	deletePlanet := http.NewDeletePlanetHandler(planetDelete)
 
+	r := gin.Default()
 	v1 := r.Group("/v1")
 	{
 		v1.POST("/planets", createPlanet.Handle)

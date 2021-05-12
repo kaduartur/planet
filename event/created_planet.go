@@ -16,6 +16,7 @@ type CreatedPlanet struct {
 	planet          planet.ReadUpdater
 	api             swapi.Finder
 	kafka           planet.KafkaWriter
+	kafkaTopic      string
 	maxRetryProcess int
 }
 
@@ -23,12 +24,14 @@ func NewCreatePlanetProcess(
 	planet planet.ReadUpdater,
 	api swapi.Finder,
 	kafka planet.KafkaWriter,
+	kafkaTopic string,
 	retryProcess int,
 ) CreatedPlanet {
 	return CreatedPlanet{
 		planet:          planet,
 		api:             api,
 		kafka:           kafka,
+		kafkaTopic:      kafkaTopic,
 		maxRetryProcess: retryProcess,
 	}
 }
@@ -116,7 +119,8 @@ func (c CreatedPlanet) retry(pd planet.PlanetDocument, event planet.CreatePlanet
 		return
 	}
 
-	if err := c.kafka.Write("planet-processor", planet.CreatedEvent, data); err != nil {
+	if err := c.kafka.Write(c.kafkaTopic, planet.CreatedEvent, data)
+		err != nil {
 		log.Printf("error to write message into kafka")
 		return
 	}

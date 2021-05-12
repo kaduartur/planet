@@ -5,6 +5,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/kaduartur/planet"
 	"log"
+	"os"
 )
 
 type ConsumerManager struct {
@@ -14,7 +15,7 @@ type ConsumerManager struct {
 
 func NewConsumer(processor planet.EventsProcessor) ConsumerManager {
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers":     "localhost",
+		"bootstrap.servers":     os.Getenv("KAFKA_SERVER"),
 		"broker.address.family": "v4",
 		"group.id":              "planet-processor",
 		"session.timeout.ms":    6000,
@@ -29,7 +30,7 @@ func NewConsumer(processor planet.EventsProcessor) ConsumerManager {
 }
 
 func (c ConsumerManager) Read() {
-	err := c.kafka.SubscribeTopics([]string{"planet-processor"}, nil)
+	err := c.kafka.SubscribeTopics([]string{os.Getenv("KAFKA_PLANET_TOPIC")}, nil)
 	if err != nil {
 		log.Fatal()
 	}
