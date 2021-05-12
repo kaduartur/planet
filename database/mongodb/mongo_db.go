@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/kamva/mgm/v3"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"log"
 	"os"
+	"time"
 )
 
 const uriPattern = "mongodb://%s:%s@%s:%s"
@@ -20,9 +22,18 @@ var (
 
 func NewConnection() {
 	opts := options.Client().ApplyURI(uri())
-	err := mgm.SetDefaultConfig(nil, dbName, opts)
+	conf := mgm.Config{CtxTimeout: time.Second * 5}
+	if err := mgm.SetDefaultConfig(&conf, dbName, opts); err != nil {
+		log.Fatalln(err)
+	}
+
+	_, client, _, err := mgm.DefaultConfigs()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
+	}
+
+	if err := client.Ping(mgm.Ctx(), readpref.Primary()); err != nil {
+		log.Fatalln(err)
 	}
 }
 

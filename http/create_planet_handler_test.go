@@ -96,24 +96,6 @@ func TestCreatePlanetHandle(t *testing.T) {
 				},
 			},
 			out: out{
-				statusCode: http.StatusBadRequest,
-				resBody:    "{\"code\":\"PNT-001\",\"message\":\"There was an unknown error processing your request.\"}",
-			},
-		},
-		{
-			name: "error to write planet",
-			in: in{
-				reader: mock.PlanetRepository{},
-				writer: mock.PlanetRepository{
-					WriteErr: planet.ErrUnknown,
-				},
-				command: planet.CreatePlanetCommand{
-					Name:    "Tatooine",
-					Climate: "arid",
-					Terrain: "desert",
-				},
-			},
-			out: out{
 				statusCode: http.StatusUnprocessableEntity,
 				resBody:    "{\"code\":\"PNT-001\",\"message\":\"There was an unknown error processing your request.\"}",
 			},

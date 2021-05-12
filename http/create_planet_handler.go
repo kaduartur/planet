@@ -44,7 +44,7 @@ func (cp CreatePlanetHandler) Handle(c *gin.Context) {
 
 	pd, err := cp.planetR.ReadByPlanetId(planetutil.GeneratePlanetID(createPlanet.Name))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, err)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, err)
 		return
 	}
 
